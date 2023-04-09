@@ -1,0 +1,22 @@
+name: 'template'
+description: 'description of solution shown on the marketplace'
+branding:
+  icon: 'check-square'
+  color: 'green'
+inputs:
+  parameter1:
+    description:  'parameter 1 description'
+    required: false
+    default: ''
+  parameter1:
+    description:  'parameter 2 description'
+    required: false
+    default: ''
+
+runs:
+  using: "composite"
+  steps:
+    - run: ${{ github.action_path }}/action.ps1 `
+              -parameter1 '${{ inputs.parameter1 }}' `
+              -parameter2 '${{ inputs.parameter2 }}'
+      shell: pwsh
