@@ -1,3 +1,4 @@
+function YamlTo-Arm {
 [CmdletBinding()]
 param (
     [Parameter(Mandatory = $true)]
@@ -167,3 +168,4 @@ if ($null -ne $analyticsRules) {
     }
 }
 #EndRegion Processing AlertRules
+}
