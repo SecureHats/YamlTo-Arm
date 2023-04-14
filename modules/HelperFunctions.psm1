@@ -1,185 +1,169 @@
-Function Set-LogAnalyticsData {
+[CmdletBinding()]
+param (
+    [Parameter(Mandatory = $true)]
+    [string]$FilesPath,
+
+    [Parameter(Mandatory = $true)]
+    [string]$OutputPath
+    
+)
+
+#Region Install Modules
+$modulesToInstall = @(
+    'powershell-yaml'
+)
+
+$modulesToInstall | ForEach-Object {
+    if (-not (Get-Module -ListAvailable -All $_)) {
+        Write-Output "Module [$_] not found, INSTALLING..."
+        Install-Module $_ -Force
+        Import-Module $_ -Force
+    }
+}
+#EndRegion Install Modules
+
+#Region HelperFunctions
+function Convert-TriggerOperator {
     param (
         [Parameter(Mandatory = $true)]
-        [string]$workspaceId,
-
-        [Parameter(Mandatory = $true)]
-        [securestring]$workspaceKey,
-
-        [Parameter(Mandatory = $true)]
-        [array]$body,
-
-        [Parameter(Mandatory = $true)]
-        [string]$logType,
-
-        [Parameter(Mandatory = $true)]
-        [string]$timestamp
+        [string]$value
     )
 
-    $properties = @{
-        "WorkspaceId"   = $workspaceId
-        "WorkspaceKey"  = $workspaceKey
-        "contentLength" = $body.Length
-        "timestamp"     = $timestamp
+    switch ($value) {
+        "gt" { $value = "GreaterThan" }
+        "lt" { $value = "LessThan" }
+        "eq" { $value = "Equal" }
+        "ne" { $value = "NotEqual" }
+        default { $value }
     }
+    return $value
+}
 
-    $payload = @{
-        "Headers"     = @{
-            "Authorization" = Build-Signature @properties
-            "Log-Type"      = $logType
-            "x-ms-date"     = $timestamp
+function ConvertTo-ISO8601 {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$value
+    )
+
+    switch -regEx ($value.ToUpper()) {
+        '[hmHM]$' {
+            return ('PT{0}' -f $value).ToUpper()
         }
-        "method"      = "POST"
-        "contentType" = "application/json"
-        "uri"         = "https://{0}.ods.opinsights.azure.com/api/logs?api-version=2016-04-01" -f $workspaceId
-        "body"        = $body
+        '[dD]$' {
+            return ('P{0}' -f $value).ToUpper()
+        }
+        default {
+            return $value.ToUpper()
+        }
     }
+}
 
-    $response = Invoke-WebRequest @payload -UseBasicParsing
+function ConvertTo-ARM {
+    param (
+        [Parameter(Mandatory = $true)]
+        [object]$value,
 
-    if (-not($response.StatusCode -eq 200)) {
-        Write-Warning "Unable to send data to Data Log Collector table"
+        [Parameter(Mandatory = $true)]
+        [string]$outputFile
+    )
+
+    $template = [pscustomobject]@{
+        '$schema'      = "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#"
+        contentVersion = "1.0.0.0"
+        parameters     = @{
+            workspace     = @{
+                type = "string"
+            }
+            alertRuleName = [pscustomobject]@{
+                type         = "string"
+                defaultValue = "$($value.properties.displayName)"
+            }
+        }
+        resources      = @(
+            [pscustomobject]@{
+                id         = "[format('{0}/alertRules/{1}', resourceId('Microsoft.OperationalInsights/workspaces/providers', parameters('workspace'), 'Microsoft.SecurityInsights'), guid(string(parameters('alertRuleName'))))]"
+                name       = "[format('{0}/{1}/{2}', parameters('workspace'), 'Microsoft.SecurityInsights', guid(string(parameters('alertRuleName'))))]"
+                type       = "Microsoft.OperationalInsights/workspaces/providers/alertRules"
+                kind       = "Scheduled"
+                apiVersion = "2021-03-01-preview"
+                properties = $body.properties
+            }
+        )
+    }
+    
+    $template | ConvertTo-Json -Depth 20 | Out-File $outputFile -ErrorAction Stop
+}
+#EndRegion HelperFunctions
+
+#Region Fetching AlertRules
+foreach ($rule in $analyticsRules) {
+
+    try {
+        $analyticsRules = Get-ChildItem -Path $FilesPath -Include "*.yaml", "*.yml" -Recurse -ErrorAction 'Stop'
+    }
+    catch {
+        Write-Error $_.Exception.Message
         break
     }
-    else {
-        Write-Output "Uploaded to Data Log Collector table [$($logType + '_CL')] at [$timestamp]"
-    }
 }
+#EndRegion Fetching AlertRules
 
-Function Build-Signature {
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]$workspaceId,
-
-        [Parameter(Mandatory = $true)]
-        [securestring]$workspaceKey,
-
-        [Parameter(Mandatory = $true)]
-        [int32]$contentLength,
-
-        [Parameter(Mandatory = $true)]
-        [string]$timestamp
-    )
-
-        $xHeaders       = "x-ms-date:" + $timestamp
-        $stringToHash   = "POST" + "`n" + $contentLength + "`n" + "application/json" + "`n" + $xHeaders + "`n" + "/api/logs"
-        $bytesToHash    = [Text.Encoding]::UTF8.GetBytes($stringToHash)
-        $keyBytes       = [Convert]::FromBase64String((ConvertFrom-SecureString -SecureString $workspaceKey -AsPlainText))
-        $sha256         = New-Object System.Security.Cryptography.HMACSHA256
-        $sha256.Key     = $keyBytes
-        $calculatedHash = $sha256.ComputeHash($bytesToHash)
-        $encodedHash    = [Convert]::ToBase64String($calculatedHash)
-        $authorization  = 'SharedKey {0}:{1}' -f $workspaceId, $encodedHash
-
-    return $authorization
-}
-
-Function Get-Workspace {
-    param (
-        [Parameter(Mandatory = $false)]
-        [string]$workspaceName
-    )
-
-    if (-not([string]::IsNullOrEmpty($workspaceName))) {
+#Region Processing AlertRules
+if ($null -ne $analyticsRules) {
+    foreach ($rule in $analyticsRules) {
         try {
-            $workspaceObject = @{
-                workspaceId  = ''
-                workspaceKey = ''
-            }
+            $ruleObject = get-content $rule | ConvertFrom-Yaml
 
-            Write-Verbose "Connecting to workspace"
-            $workspace = Get-AzResource `
-                -Name "$workspaceName" `
-                -ResourceType 'Microsoft.OperationalInsights/workspaces'
-
-            $ResourceGroupName = $workspace.ResourceGroupName
-            $workspaceName = $workspace.Name
-
-            $workspaceObject.workspaceId = (Get-AzOperationalInsightsWorkspace -ResourceGroupName $resourceGroupName -Name $workspaceName).CustomerId.Guid
-
-            Write-Host "Workspace Name: $($workspaceName)"
-            Write-Host "Workspace Id: $(workspaceObject.$workspaceId)"
-
-            if ($null -ne $workspace) {
-                try {
-                    Set-Item Env:\SuppressAzurePowerShellBreakingChangeWarnings "true"
-
-                    $workspaceObject.workspaceKey = `
-                    (Get-AzOperationalInsightsWorkspaceSharedKeys `
-                            -ResourceGroupName $resourceGroupName `
-                            -Name $workspaceName).PrimarySharedKey `
-                    | ConvertTo-SecureString -AsPlainText -Force
+            switch ($ruleObject.kind) {
+                "MicrosoftSecurityIncidentCreation" {  
+                    $body = @{
+                        "kind"       = "MicrosoftSecurityIncidentCreation"
+                        "properties" = @{
+                            "enabled"       = "true"
+                            "productFilter" = $ruleObject.productFilter
+                            "displayName"   = $ruleObject.displayName
+                        }
+                    }
                 }
-                catch {
-                    Write-Warning -Message "Log Analytics workspace key for [$($workspaceName)] not found."
-                    break
+                "Scheduled" {
+                    $body = [pscustomobject]@{
+                        "kind"       = "Scheduled"
+                        "properties" = @{
+                            "displayName"              = $ruleObject.name
+                            "description"              = $ruleObject.description
+                            "severity"                 = $ruleObject.severity
+                            "enabled"                  = $true
+                            "query"                    = $ruleObject.query
+                            "queryFrequency"           = ConvertTo-ISO8601 $ruleObject.queryFrequency
+                            "queryPeriod"              = ConvertTo-ISO8601 $ruleObject.queryPeriod
+                            "triggerOperator"          = Convert-TriggerOperator $ruleObject.triggerOperator
+                            "triggerThreshold"         = $ruleObject.triggerThreshold
+                            "suppressionDuration"      = "PT5H"  #Azure Sentinel requires a value here, although suppression is disabled
+                            "suppressionEnabled"       = $false
+                            "tactics"                  = $ruleObject.tactics
+                            "techniques"               = $ruleObject.relevantTechniques
+                            "alertRuleTemplateName"    = $ruleObject.id
+                            "entityMappings"           = $ruleObject.entityMappings
+                            "incidentConfiguration"    = $ruleObject.incidentConfiguration
+                            "sentinelEntitiesMappings" = $ruleObject.sentinelEntitiesMappings
+                            "eventGroupingSettings"    = $ruleObject.eventGroupingSettings
+                            "templateVersion"          = $ruleObject.version
+                        }
+                    }
+                    
+                    # Update duration to ISO8601
+                    if ($null -ne $ruleObject.incidentConfiguration) {
+                        $body.properties.incidentConfiguration.groupingConfiguration.lookbackDuration = ConvertTo-ISO8601 $ruleObject.incidentConfiguration.groupingConfiguration.lookbackDuration
+                    }
                 }
+                Default { }
             }
-            return $workspaceObject
         }
         catch {
-            Write-Warning -Message "Log Analytics workspace [$($workspaceName)] not found in the current context"
+            Write-Error $_.Exception.Message
             break
         }
+        ConvertTo-ARM -value $body -outputFile ('{0}/{1}.json' -f ($($rule.DirectoryName), $($rule.BaseName)))
     }
 }
-
-function Send-CustomLogs {
-    param (
-        [Parameter(Mandatory = $true)]
-        [String]$workspaceId,
-
-        [Parameter(Mandatory = $true)]
-        [SecureString]$workspaceKey,
-
-        [Parameter(Mandatory = $true)]
-        [string]$tableName,
-
-        [Parameter(Mandatory = $true)]
-        [array]$dataInput
-    )
-
-    $postObject = @{
-        "workspaceId"  = $workspaceId
-        "WorkspaceKey" = $workspaceKey
-        "logType"      = $tableName
-        "body"         = ''
-        "timestamp"    = ''
-    }
-
-    $tempdata = @()
-    $tempDataSize = 0
-
-    if ((($dataInput | ConvertTo-Json -depth 20).Length) -gt 25MB) {
-        foreach ($record in $dataInput) {
-            $tempdata += $record
-            $tempDataSize += ($record | ConvertTo-Json -depth 20).Length
-            if ($tempDataSize -gt 25MB) {
-                $postObject.body = ([System.Text.Encoding]::UTF8.GetBytes(($tempdata | ConvertTo-Json)))
-                $postObject.timestamp = [DateTime]::UtcNow.ToString("r")
-
-                Write-Host "Sending block data = $TempDataSize"
-                Set-LogAnalyticsData @postObject
-
-                $tempdata = $null
-                $tempdata = @()
-                $tempDataSize = 0
-            }
-        }
-        $postObject.body = ([System.Text.Encoding]::UTF8.GetBytes(($tempdata | ConvertTo-Json -depth 20)))
-        $postObject.timestamp = [DateTime]::UtcNow.ToString("r")
-
-        Write-Host "Sending left over data = $Tempdatasize"
-        Set-LogAnalyticsData @postObject
-
-        $tempdata = $null
-        $tempdata = @()
-        $tempDataSize = 0
-    } else {
-        $postObject.body = ([System.Text.Encoding]::UTF8.GetBytes(($dataInput | ConvertTo-Json -depth 20)))
-        $postObject.timestamp = [DateTime]::UtcNow.ToString("r")
-    }
-
-    Write-Host "Sending data to [$($tableName + '_CL')]"
-    Set-LogAnalyticsData @postObject
-}
+#EndRegion Processing AlertRules
