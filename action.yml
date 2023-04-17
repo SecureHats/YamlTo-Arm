@@ -1,4 +1,4 @@
-name: 'yamlto-arm'
+name: 'ymlto-arm'
 description: 'This GitHub action can be used to convert Microsoft Sentinel yaml files to deployable ARM templates'
 branding:
   icon: 'check-square'
