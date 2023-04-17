@@ -22,5 +22,6 @@ runs:
   steps:
     - run: ${{ github.action_path }}/action.ps1 `
               -FilesPath '${{ inputs.filesPath }}' `
-              -OutputPath '${{ inputs.outputPath }}'
+              -OutputPath '${{ inputs.outputPath }}' `
+              -debug $true
       shell: pwsh
