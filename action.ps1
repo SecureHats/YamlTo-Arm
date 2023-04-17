@@ -21,7 +21,10 @@ param (
     [bool]$SingleFile,
 
     [Parameter(Mandatory = $false)]
-    [bool]$returnObject
+    [bool]$returnObject,
+    
+    [Parameter(Mandatory = $false)]
+    [bool]$debug
         
 )
 
@@ -39,6 +42,7 @@ $hashTable = @{
     OutputPath   = $OutputPath
     SingleFile   = $SingleFile
     returnObject = $returnObject
+    debug         = $debug
 }
 
 Convert-YamlToArm @hashTable
