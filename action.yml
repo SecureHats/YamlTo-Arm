@@ -15,7 +15,7 @@ inputs:
   debugging:
     description:  'Enable debug'
     required: false
-    default: ''
+    default: true
 
 runs:
   using: "composite"
