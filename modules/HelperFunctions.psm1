@@ -11,7 +11,10 @@ function Convert-YamlToArm {
         [switch]$SingleFile,
 
         [Parameter(Mandatory = $false)]
-        [switch]$returnObject
+        [switch]$returnObject,
+        
+        [Parameter(Mandatory = $false)]
+        [switch]$debug
         
     )
 
@@ -31,7 +34,9 @@ function Convert-YamlToArm {
 
     #Region Fetching AlertRules
     try {
+        if ($debug) { Write-Host "Collecting Templates" }
         $analyticsRules = Get-ChildItem -Path $FilesPath -Include "*.yaml", "*.yml" -Recurse -ErrorAction 'Stop'
+        if ($debug) { Write-Host "$($analyticsRules)" }
     }
     catch {
         Write-Error $_.Exception.Message
@@ -46,7 +51,7 @@ function Convert-YamlToArm {
         foreach ($rule in $analyticsRules) {
             try {
                 $ruleObject = get-content $rule | ConvertFrom-Yaml
-
+                if ($debug) { Write-Host $($ruleObject) }
                 switch ($ruleObject.kind) {
                     "MicrosoftSecurityIncidentCreation" {  
                         $body = @{
@@ -207,6 +212,7 @@ function ConvertTo-ARM {
         return $template
     } else {
         $template | ConvertTo-Json -Depth 20 | Out-File $outputFile -ErrorAction Stop
+        if ($debug) { Write-Host "Created template" $($template) }
     }
 }
 
