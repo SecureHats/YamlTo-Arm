@@ -4,19 +4,19 @@ branding:
   icon: 'check-square'
   color: 'green'
 inputs:
-  parameter1:
-    description:  'filesPath'
+  filesPath:
+    description:  'Path to source files'
     required: false
     default: ''
-#   parameter1:
-#     description:  'parameter 2 description'
-#     required: false
-#     default: ''
+  outputPath:
+    description:  'Path to destination'
+    required: false
+    default: ''
 
 runs:
   using: "composite"
   steps:
     - run: ${{ github.action_path }}/action.ps1 `
-              -parameter1 '${{ inputs.parameter1 }}' `
-#               -parameter2 '${{ inputs.parameter2 }}'
+              -FilesPath '${{ inputs.filesPath }}' `
+              -OutputPath '${{ inputs.outputPath }}'
       shell: pwsh
