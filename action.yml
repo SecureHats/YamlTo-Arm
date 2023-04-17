@@ -12,7 +12,7 @@ inputs:
     description:  'Path to destination'
     required: false
     default: ''
-  debug:
+  debugging:
     description:  'Enable debug'
     required: false
     default: ''
@@ -23,5 +23,5 @@ runs:
     - run: ${{ github.action_path }}/action.ps1 `
               -FilesPath '${{ inputs.filesPath }}' `
               -OutputPath '${{ inputs.outputPath }}' `
-              -debug '${{ inputs.debug }}'
+              -debugging '${{ inputs.debugging }}'
       shell: pwsh
