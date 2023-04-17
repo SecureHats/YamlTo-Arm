@@ -1,11 +1,17 @@
-function YamlTo-Arm {
+function Convert-YamlToArm {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true)]
         [string]$FilesPath,
 
         [Parameter(Mandatory = $true)]
-        [string]$OutputPath
+        [string]$OutputPath,
+
+        [Parameter(Mandatory = $false)]
+        [switch]$SingleFile,
+
+        [Parameter(Mandatory = $false)]
+        [switch]$returnObject
         
     )
 
@@ -32,6 +38,8 @@ function YamlTo-Arm {
         break
     }
     #EndRegion Fetching AlertRules
+
+    $result = @()
 
     #Region Processing AlertRules
     if ($null -ne $analyticsRules) {
@@ -63,7 +71,7 @@ function YamlTo-Arm {
                                 "queryPeriod"              = ConvertTo-ISO8601 $ruleObject.queryPeriod
                                 "triggerOperator"          = Convert-TriggerOperator $ruleObject.triggerOperator
                                 "triggerThreshold"         = $ruleObject.triggerThreshold
-                                "suppressionDuration"      = "PT5H"  #Azure Sentinel requires a value here, although suppression is disabled
+                                "suppressionDuration"      = "PT5M"
                                 "suppressionEnabled"       = $false
                                 "tactics"                  = $ruleObject.tactics
                                 "techniques"               = $ruleObject.relevantTechniques
@@ -88,7 +96,14 @@ function YamlTo-Arm {
                 Write-Error $_.Exception.Message
                 break
             }
-            ConvertTo-ARM -value $body -outputFile ('{0}/{1}.json' -f ($($rule.DirectoryName), $($rule.BaseName)))
+            if ($SingleFile) {
+                $result += ConvertTo-ArmResource -value $body
+            } else {
+                ConvertTo-ARM -value $body -outputFile ('{0}/{1}.json' -f ($($rule.DirectoryName), $($rule.BaseName))) -returnObject $returnObject
+            }
+        }
+        if ($SingleFile) {
+            ConvertTo-ARM -value $result -outputFile ('{0}/{1}.json' -f ($($rule.DirectoryName), 'deployment')) -singleFile $true -returnObject $returnObject
         }
     }
     #EndRegion Processing AlertRules
@@ -136,33 +151,81 @@ function ConvertTo-ARM {
         [object]$value,
 
         [Parameter(Mandatory = $true)]
-        [string]$outputFile
+        [string]$outputFile,
+
+        [Parameter(Mandatory = $false)]
+        [bool]$returnObject,
+
+        [Parameter(Mandatory = $false)]
+        [bool]$singleFile = $false
+
     )
 
-    $template = [pscustomobject]@{
-        '$schema'      = "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#"
-        contentVersion = "1.0.0.0"
-        parameters     = @{
-            workspace     = @{
-                type = "string"
+    if ($singleFile) {
+        $template = [pscustomobject]@{
+            '$schema'      = "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#"
+            contentVersion = "1.0.0.0"
+            parameters     = @{
+                workspace     = @{
+                    type = "string"
+                }
+                alertRuleName = [pscustomobject]@{
+                    type         = "string"
+                    defaultValue = "Multi-Rule deployment"
+                }
             }
-            alertRuleName = [pscustomobject]@{
-                type         = "string"
-                defaultValue = "$($value.properties.displayName)"
-            }
+            resources = $value
         }
-        resources      = @(
+    } 
+    else {
+        $template = [pscustomobject]@{
+            '$schema'      = "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#"
+            contentVersion = "1.0.0.0"
+            parameters     = @{
+                workspace     = @{
+                    type = "string"
+                }
+                alertRuleName = [pscustomobject]@{
+                    type         = "string"
+                    defaultValue = "$($value.properties.displayName)"
+                }
+            }
+            resources      = @(
+                [pscustomobject]@{
+                    id         = "[format('{0}/alertRules/{1}', resourceId('Microsoft.OperationalInsights/workspaces/providers', parameters('workspace'), 'Microsoft.SecurityInsights'), guid(string(parameters('alertRuleName'))))]"
+                    name       = "[format('{0}/{1}/{2}', parameters('workspace'), 'Microsoft.SecurityInsights', guid(string(parameters('alertRuleName'))))]"
+                    type       = "Microsoft.OperationalInsights/workspaces/providers/alertRules"
+                    kind       = "Scheduled"
+                    apiVersion = "2021-03-01-preview"
+                    properties = $value.properties
+                }
+            )
+        }
+    }
+    
+    if ($returnObject) {
+        return $template
+    } else {
+        $template | ConvertTo-Json -Depth 20 | Out-File $outputFile -ErrorAction Stop
+    }
+}
+
+function ConvertTo-ArmResource {
+    param (
+        [Parameter(Mandatory = $true)]
+        [object]$value
+    )
+        $resourceObject      = @(
             [pscustomobject]@{
-                id         = "[format('{0}/alertRules/{1}', resourceId('Microsoft.OperationalInsights/workspaces/providers', parameters('workspace'), 'Microsoft.SecurityInsights'), guid(string(parameters('alertRuleName'))))]"
-                name       = "[format('{0}/{1}/{2}', parameters('workspace'), 'Microsoft.SecurityInsights', guid(string(parameters('alertRuleName'))))]"
+                id         = "[format('{0}/alertRules/{1}', resourceId('Microsoft.OperationalInsights/workspaces/providers', parameters('workspace'), 'Microsoft.SecurityInsights'), guid(string('$($value.properties.displayName)')))]"
+                name       = "[format('{0}/{1}/{2}', parameters('workspace'), 'Microsoft.SecurityInsights', guid(string('$($value.properties.displayName)')))]"
                 type       = "Microsoft.OperationalInsights/workspaces/providers/alertRules"
                 kind       = "Scheduled"
                 apiVersion = "2021-03-01-preview"
-                properties = $body.properties
+                properties = $value.properties
             }
         )
-    }
     
-    $template | ConvertTo-Json -Depth 20 | Out-File $outputFile -ErrorAction Stop
+     return $resourceObject
 }
 #EndRegion HelperFunctions

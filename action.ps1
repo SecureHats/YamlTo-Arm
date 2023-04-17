@@ -10,5 +10,15 @@
 
 #>
 
+Import-Module "$($PSScriptRoot)/modules/HelperFunctions.psm1"
+
 param (
+    [Parameter(Mandatory = $true)]
+    [string]$FilesPath,
+
+    [Parameter(Mandatory = $true)]
+    [string]$OutputPath
+        
 )
+
+$data = YamlTo-Arm -FilesPath $FilesPath
