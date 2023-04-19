@@ -65,7 +65,7 @@ jobs:
 
 This Action has the following format inputs.
 
-| Name | Req | Description
+| Name | Req | Type | Description
 |-|-|-|-|
 | **`filesPath`**  | true | string | Path to the directory containing the log files to convert, relative to the root of the project.<br /> This path is optional and defaults to the project root, in which case all yaml files across the entire project tree will be discovered.
 | **`outputPath`**  | true | string | Path to the directory containing the log files to convert, relative to the root of the project.<br /> This path is optional and defaults to the project root, in which case all yaml files across the entire project tree will be discovered.
