@@ -11,11 +11,7 @@ function Convert-YamlToArm {
         [switch]$SingleFile,
 
         [Parameter(Mandatory = $false)]
-        [switch]$returnObject,
-        
-        [Parameter(Mandatory = $false)]
-        [bool]$debugging
-        
+        [switch]$returnObject  
     )
 
     #Region Install Modules
@@ -33,25 +29,20 @@ function Convert-YamlToArm {
     #EndRegion Install Modules
 
     #Region Fetching AlertRules
-#     try {
-        if ($debugging) { Write-Output "Grabbing Analytics Rules" }
-        $analyticsRules = Get-ChildItem -Path $FilesPath -Include "*.yaml", "*.yml" -Recurse -ErrorAction 'Stop'
-        if ($debugging) { Write-Output "Detected $($analyticsRules.count) to Analytics Rules" }
-#     }
-#     catch {
-#         Write-Error $_.Exception.Message
-#         break
-#     }
+    try {
+        $analyticsRules = Get-ChildItem -Path $FilesPath -Include "*.yaml", "*.yml" -Recurse
+    } catch {
+        Write-Error $_.Exception.Message
+        break
+    }
     #EndRegion Fetching AlertRules
 
-    $result = @()
-
     #Region Processing AlertRules
+    $result = @()
     if ($null -ne $analyticsRules) {
         foreach ($rule in $analyticsRules) {
-#             try {
+            try {
                 $ruleObject = get-content $rule | ConvertFrom-Yaml
-                if ($debugging) { Write-Output $($ruleObject) }
                 switch ($ruleObject.kind) {
                     "MicrosoftSecurityIncidentCreation" {  
                         $body = @{
@@ -96,11 +87,10 @@ function Convert-YamlToArm {
                     }
                     Default { }
                 }
-#             }
-#             catch {
-#                 Write-Error $_.Exception.Message
-#                 break
-#             }
+            } catch {
+                Write-Error $_.Exception.Message
+                break
+            }
             if ($SingleFile) {
                 $result += ConvertTo-ArmResource -value $body
             } else {
@@ -212,7 +202,6 @@ function ConvertTo-ARM {
         return $template
     } else {
         $template | ConvertTo-Json -Depth 20 | Out-File $outputFile -ErrorAction Stop
-        if ($debugging) { Write-Output "Created template" $($template) }
     }
 }
 

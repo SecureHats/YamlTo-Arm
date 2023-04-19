@@ -16,10 +16,6 @@ inputs:
     description:  'Output single deployment template'
     required: false
     default: true
-  debugging:
-    description:  'Enable debug'
-    required: false
-    default: true
 
 runs:
   using: "composite"
@@ -27,6 +23,5 @@ runs:
     - run: ${{ github.action_path }}/action.ps1 `
               -FilesPath '${{ inputs.filesPath }}' `
               -OutputPath '${{ inputs.outputPath }}' `
-              -SingleFile ${{ inputs.SingleFile }} `
-              -debugging ${{ inputs.debugging }}
+              -SingleFile ${{ inputs.SingleFile }}
       shell: pwsh
