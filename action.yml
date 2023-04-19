@@ -19,7 +19,7 @@ inputs:
   returnObject:
     description:  'Return template as object'
     required: false
-    default: true
+    default: false
 
 runs:
   using: "composite"
