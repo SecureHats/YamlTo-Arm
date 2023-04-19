@@ -6,12 +6,16 @@ branding:
 inputs:
   filesPath:
     description:  'Path to source files'
-    required: false
+    required: true
     default: ''
   outputPath:
     description:  'Path to destination'
-    required: false
+    required: true
     default: ''
+  singleFile:
+    description:  'Output single deployment template'
+    required: false
+    default: true
   debugging:
     description:  'Enable debug'
     required: false
@@ -23,5 +27,6 @@ runs:
     - run: ${{ github.action_path }}/action.ps1 `
               -FilesPath '${{ inputs.filesPath }}' `
               -OutputPath '${{ inputs.outputPath }}' `
+              -SingleFile ${{ inputs.SingleFile }} `
               -debugging ${{ inputs.debugging }}
       shell: pwsh
