@@ -9,7 +9,7 @@
 
 This GitHub action can be used to convert Microsoft Sentinel yaml files to deployable ARM templates.  
 
-### Example 1
+### Example 1 (return a single arm template deployment.json)
 
 > Add the following code block to your Github workflow:
 
@@ -30,11 +30,12 @@ jobs:
       - name: SecureHats template
         uses: SecureHats/YamlTo-Arm@v1.0
         with:
-          filesPath: samples
-          outputPath: output
+          filesPath: ./samples
+          outputPath: ./output
+          singleFile: true
 ```
 
-### Example 2 (return only a single)
+### Example 2 (return multiple arm templates)
 
 > Add the following code block to your Github workflow:
 
@@ -60,30 +61,17 @@ jobs:
           singleFile: true
 ```
 
-<!-- ### Example 2 only send changed files
-
-> The output value from this action can be used as an input value for the `filesPath` parameter.
-
-```yaml      
-      - name: SecureHats template
-        uses: SecureHats/template@v1.0
-        with:
-          workspaceId: ${{ secrets.WORKSPACEID }}
-          workspaceKey: ${{ secrets.WORKSPACEKEY }}
-```
- -->
-
 ### Inputs
 
 This Action has the following format inputs.
 
 | Name | Req | Description
-|-|-|-|
-| **`filesPath`**  | true | Path to the directory containing the log files to convert, relative to the root of the project.<br /> This path is optional and defaults to the project root, in which case all yaml files across the entire project tree will be discovered.
-| **`outputPath`**  | true | Path to the directory containing the log files to convert, relative to the root of the project.<br /> This path is optional and defaults to the project root, in which case all yaml files across the entire project tree will be discovered.
-<!-- | **`workspaceId`** | true | The workspace-id of the Log Analytics workspace.<br /> This value needs to be provided as a GitHub secret. see [documentation](https://github.com/Azure/actions-workflow-samples/blob/master/assets/create-secrets-for-GitHub-workflows.md) on how to create secrets in GitHub
-| **`workspaceKey`** | true | The primary or secondary key of the Log Analytics workspace.<br /> This value needs to be provided as a GitHub secret. see [documentation](https://github.com/Azure/actions-workflow-samples/blob/master/assets/create-secrets-for-GitHub-workflows.md) on how to create secrets in GitHub
- -->
+|-|-|-|-|
+| **`filesPath`**  | true | string | Path to the directory containing the log files to convert, relative to the root of the project.<br /> This path is optional and defaults to the project root, in which case all yaml files across the entire project tree will be discovered.
+| **`outputPath`**  | true | string | Path to the directory containing the log files to convert, relative to the root of the project.<br /> This path is optional and defaults to the project root, in which case all yaml files across the entire project tree will be discovered.
+| **`singleFile`**  | false | boolean | The default value when not set is `true`. This means that a single arm template is returned called `deployment.json`. This to improve the deployment speed in Microsoft Azure.
+| **`returnObject`**  | false | boolean | The default value when not set is `false`. When the value is set to `true` a action will return an ARM template as an object instead of one of multiple files.
+
 
 ## Current limitations / Under Development
 
