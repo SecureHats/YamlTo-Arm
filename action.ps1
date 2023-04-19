@@ -39,5 +39,6 @@ $hashTable = @{
     OutputPath   = $OutputPath
     SingleFile   = $SingleFile
     returnObject = $returnObject
+}
 
 Convert-YamlToArm @hashTable
