@@ -58,7 +58,6 @@ jobs:
         with:
           filesPath: samples
           outputPath: output
-          singleFile: true
 ```
 
 ### Inputs
