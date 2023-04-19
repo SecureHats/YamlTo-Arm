@@ -33,15 +33,15 @@ function Convert-YamlToArm {
     #EndRegion Install Modules
 
     #Region Fetching AlertRules
-    try {
+#     try {
         if ($debugging) { Write-Host "Collecting Templates" }
         $analyticsRules = Get-ChildItem -Path $FilesPath -Include "*.yaml", "*.yml" -Recurse -ErrorAction 'Stop'
         if ($debugging) { Write-Host "$($analyticsRules)" }
-    }
-    catch {
-        Write-Error $_.Exception.Message
-        break
-    }
+#     }
+#     catch {
+#         Write-Error $_.Exception.Message
+#         break
+#     }
     #EndRegion Fetching AlertRules
 
     $result = @()
@@ -49,7 +49,7 @@ function Convert-YamlToArm {
     #Region Processing AlertRules
     if ($null -ne $analyticsRules) {
         foreach ($rule in $analyticsRules) {
-            try {
+#             try {
                 $ruleObject = get-content $rule | ConvertFrom-Yaml
                 if ($debugging) { Write-Host $($ruleObject) }
                 switch ($ruleObject.kind) {
@@ -96,11 +96,11 @@ function Convert-YamlToArm {
                     }
                     Default { }
                 }
-            }
-            catch {
-                Write-Error $_.Exception.Message
-                break
-            }
+#             }
+#             catch {
+#                 Write-Error $_.Exception.Message
+#                 break
+#             }
             if ($SingleFile) {
                 $result += ConvertTo-ArmResource -value $body
             } else {
