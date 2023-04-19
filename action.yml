@@ -27,6 +27,5 @@ runs:
     - run: ${{ github.action_path }}/action.ps1 `
               -FilesPath '${{ inputs.filesPath }}' `
               -OutputPath '${{ inputs.outputPath }}' `
-              -SingleFile ${{ inputs.SingleFile }} `
-              -returnObject ${{ inputs.returnObject }}
+              -SingleFile ${{ inputs.SingleFile }}
       shell: pwsh
