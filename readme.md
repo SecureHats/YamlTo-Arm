@@ -69,7 +69,7 @@ This Action has the following format inputs.
 | **`filesPath`**  | true | string | Path to the directory containing the log files to convert, relative to the root of the project.<br /> This path is optional and defaults to the project root, in which case all yaml files across the entire project tree will be discovered.
 | **`outputPath`**  | true | string | Path to the directory containing the log files to convert, relative to the root of the project.<br /> This path is optional and defaults to the project root, in which case all yaml files across the entire project tree will be discovered.
 | **`singleFile`**  | false | boolean | The default value when not set is `true`. This means that a single arm template is returned called `deployment.json`. This to improve the deployment speed in Microsoft Azure.
-| **`returnObject`**  | false | boolean | The default value when not set is `false`. When the value is set to `true` a action will return an ARM template as an object instead of one of multiple files.
+| **`returnObject`**  | false | boolean | **IN DEVELLOPMENT** The default value when not set is `false`. When the value is set to `true` a action will return an ARM template as an object instead of one of multiple files.
 
 
 ## Current limitations / Under Development
