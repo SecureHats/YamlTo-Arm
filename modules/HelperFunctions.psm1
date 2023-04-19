@@ -34,9 +34,9 @@ function Convert-YamlToArm {
 
     #Region Fetching AlertRules
 #     try {
-        if ($debugging) { Write-Output "Collecting Templates" }
+        if ($debugging) { Write-Output "Grabbing Analytics Rules" }
         $analyticsRules = Get-ChildItem -Path $FilesPath -Include "*.yaml", "*.yml" -Recurse -ErrorAction 'Stop'
-        if ($debugging) { Write-Output "$($analyticsRules)" }
+        if ($debugging) { Write-Output "Detected $($analyticsRules.count) to Analytics Rules" }
 #     }
 #     catch {
 #         Write-Error $_.Exception.Message
