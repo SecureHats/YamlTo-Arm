@@ -16,6 +16,7 @@ inputs:
     description:  'Output single deployment template'
     required: false
     default: true
+    type: boolean
 
 runs:
   using: "composite"
