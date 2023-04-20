@@ -35,15 +35,15 @@ try {
 
 #Type casting required because of limitation GitHub action input
 
-if ($SingleFile -eq 'true'){ [bool]$var_singleFile = $true } else { [bool]$var_singleFile = $false}
-if ($ReturnObject -eq 'true'){ [bool]$var_returnObject = $true } else { [bool]$var_returnObject = $false}
+# if ($SingleFile -eq 'true'){ [bool]$var_singleFile = $true } else { [bool]$var_singleFile = $false}
+# if ($ReturnObject -eq 'true'){ [bool]$var_returnObject = $true } else { [bool]$var_returnObject = $false}
 
 # Starting Conversion of files
 $hashTable = @{
     FilesPath    = $FilesPath
     OutputPath   = $OutputPath
-    SingleFile   = $var_singleFile
-    ReturnObject = $var_returnObject
+    SingleFile   = [System.Convert]::ToBoolean($SingleFile)
+    ReturnObject = [System.Convert]::ToBoolean($ReturnObject)
 }
 
 Convert-YamlToArm @hashTable
