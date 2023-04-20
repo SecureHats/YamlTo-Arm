@@ -17,6 +17,11 @@ inputs:
     required: false
     default: true
     type: boolean
+  returnObject:
+    description:  'Output single deployment template'
+    required: false
+    default: false
+    type: boolean
 
 runs:
   using: "composite"
@@ -24,5 +29,6 @@ runs:
     - run: ${{ github.action_path }}/action.ps1 `
               -FilesPath '${{ inputs.filesPath }}' `
               -OutputPath '${{ inputs.outputPath }}' `
-              -singleFile ${{ inputs.singleFile }}
+              -singleFile ${{ inputs.singleFile }} `
+              -returnObject ${{ inputs.returnObject }}
       shell: pwsh
