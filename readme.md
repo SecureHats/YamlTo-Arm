@@ -56,8 +56,8 @@ jobs:
       - name: SecureHats template
         uses: SecureHats/YamlTo-Arm@v1.0
         with:
-          filesPath: samples
-          outputPath: output
+          filesPath: ./samples
+          outputPath: ./output
 ```
 
 ### Inputs
