@@ -18,10 +18,10 @@ param (
     [string]$OutputPath,
 
     [Parameter(Mandatory = $false)]
-    [bool]$SingleFile,
+    [string]$SingleFile,
 
     [Parameter(Mandatory = $false)]
-    [bool]$returnObject
+    [string]$returnObject
         
 )
 
@@ -33,11 +33,17 @@ try {
     break
 }
 
+#Type casting required because of limitation GitHub action input
+
+if ($SingleFile -eq 'true'){ $singleFile = $true }
+if ($ReturnObject -eq 'true'){ $returnObject = $true }
+
 # Starting Conversion of files
 $hashTable = @{
     FilesPath    = $FilesPath
     OutputPath   = $OutputPath
-    SingleFile   = $SingleFile
+    SingleFile   = $singleFile
+    ReturnObject = $returnObject
 }
 
 Convert-YamlToArm @hashTable
