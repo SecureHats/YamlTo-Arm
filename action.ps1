@@ -35,8 +35,8 @@ try {
 
 #Type casting required because of limitation GitHub action input
 
-if ($SingleFile -eq 'true'){ $singleFile = $true }
-if ($ReturnObject -eq 'true'){ $returnObject = $true }
+if ($SingleFile -eq 'true'){ $singleFile = $true } else { $singleFile = $false}
+if ($ReturnObject -eq 'true'){ $returnObject = $true } else { $returnObject = $false}
 
 # Starting Conversion of files
 $hashTable = @{
