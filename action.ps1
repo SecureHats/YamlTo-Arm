@@ -12,10 +12,10 @@
 
 param (
     [Parameter(Mandatory = $true)]
-    [string]$FilesPath,
+    [string]$FilesPath = '.',
 
     [Parameter(Mandatory = $true)]
-    [string]$OutputPath,
+    [string]$OutputPath = '.',
 
     [Parameter(Mandatory = $false)]
     [string]$SingleFile = 'true',
