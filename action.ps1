@@ -18,10 +18,10 @@ param (
     [string]$OutputPath,
 
     [Parameter(Mandatory = $false)]
-    [string]$SingleFile,
+    [string]$SingleFile = 'true',
 
     [Parameter(Mandatory = $false)]
-    [string]$returnObject
+    [string]$returnObject = 'false'
         
 )
 
