@@ -11,7 +11,7 @@ function Convert-YamlToArm {
         [switch]$SingleFile,
 
         [Parameter(Mandatory = $false)]
-        [switch]$returnObject  
+        [switch]$ReturnObject  
     )
 
     #Region Install Modules
@@ -94,11 +94,11 @@ function Convert-YamlToArm {
             if ($SingleFile) {
                 $result += ConvertTo-ArmResource -value $body
             } else {
-                ConvertTo-ARM -value $body -outputFile ('{0}/{1}.json' -f ($($rule.DirectoryName), $($rule.BaseName))) -returnObject $returnObject
+                ConvertTo-ARM -value $body -outputFile ('{0}/{1}.json' -f ($($rule.DirectoryName), $($rule.BaseName))) -returnObject $ReturnObject
             }
         }
         if ($SingleFile) {
-            ConvertTo-ARM -value $result -outputFile ('{0}/{1}.json' -f ($($rule.DirectoryName), 'deployment')) -singleFile $true -returnObject $returnObject
+            ConvertTo-ARM -value $result -outputFile ('{0}/{1}.json' -f ($($rule.DirectoryName), 'deployment')) -singleFile $true -returnObject $ReturnObject
         }
     }
     #EndRegion Processing AlertRules
